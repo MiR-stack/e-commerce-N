@@ -1,0 +1,18 @@
+name: Mirror to Account B
+on:
+  push:
+    branches:
+      - main  
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Mirror Repository
+        env:
+          ACCOUNT_B_TOKEN: ${{ secrets.ACCOUNT_B_TOKEN }}
+        run: |
+          # Add Account B as a remote named "mirror"
+          git remote add mirror https://$ACCOUNT_B_TOKEN@github.com/nahid-e/e-commerce.git
+          # Push all branches and tags to Account B's repository
+          git push mirror --mirror
