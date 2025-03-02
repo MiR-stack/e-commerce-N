@@ -12,8 +12,7 @@ jobs:
         env:
           ACCOUNT_B_TOKEN: ${{ secrets.ACCOUNT_B_TOKEN }}
         run: |
-          # Replace <USERNAME> with your Account B username
-          git remote add mirror https://$ACCOUNT_B_TOKEN@github.com/nahid-e/e-commerce.git
+          # Add Account B as a remote named "mirror"
+          git remote add mirror https://nahid-e:$ACCOUNT_B_TOKEN@github.com/nahid-e/e-commerce.git
+          # Push all branches, tags, and commits to the target repository
           git push mirror --mirror
-
-  
