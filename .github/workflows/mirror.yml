@@ -2,7 +2,7 @@ name: Mirror to Account B
 on:
   push:
     branches:
-      - main  # Change this if your default branch is different
+      - main
 
 jobs:
   mirror:
@@ -21,12 +21,11 @@ jobs:
         env:
           ACCOUNT_B_TOKEN: ${{ secrets.ACCOUNT_B_TOKEN }}
 
-      - name: Debug - Prepare Remote URL
+      - name: Debug - Test Repository Access
         run: |
-          # Construct the remote URL using an environment variable.
-          # This avoids issues with special characters.
-          REMOTE_URL="https://nahid-e:${ACCOUNT_B_TOKEN}@github.com/nahid-e/e-commerce.git"
-          echo "Remote URL: $REMOTE_URL"
+          echo "Testing repository access with curl..."
+          # This command will check if the repository is accessible with the provided token.
+          curl -u "nahid-e:${ACCOUNT_B_TOKEN}" https://api.github.com/repos/nahid-e/e-commerce
         env:
           ACCOUNT_B_TOKEN: ${{ secrets.ACCOUNT_B_TOKEN }}
 
@@ -34,7 +33,6 @@ jobs:
         env:
           ACCOUNT_B_TOKEN: ${{ secrets.ACCOUNT_B_TOKEN }}
         run: |
-          # Construct the remote URL and add it as the remote named "mirror"
           REMOTE_URL="https://nahid-e:${ACCOUNT_B_TOKEN}@github.com/nahid-e/e-commerce.git"
           echo "Using remote URL: $REMOTE_URL"
           git remote add mirror "$REMOTE_URL"
