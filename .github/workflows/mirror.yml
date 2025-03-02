@@ -2,17 +2,36 @@ name: Mirror to Account B
 on:
   push:
     branches:
-      - main  
+      - main  # Update if your default branch is different
+
 jobs:
   mirror:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
+      - name: Debug - Check Token Presence
+        run: |
+          if [ -z "$ACCOUNT_B_TOKEN" ]; then
+            echo "Token is empty"
+            exit 1
+          else
+            echo "Token is set. Length: ${#ACCOUNT_B_TOKEN}"
+          fi
+        env:
+          ACCOUNT_B_TOKEN: ${{ secrets.ACCOUNT_B_TOKEN }}
+
+      - name: Debug - Show Remote URL
+        run: |
+          echo "Remote URL: https://nahid-e:$ACCOUNT_B_TOKEN@github.com/nahid-e/e-commerce.git"
+        env:
+          ACCOUNT_B_TOKEN: ${{ secrets.ACCOUNT_B_TOKEN }}
+
       - name: Mirror Repository
         env:
           ACCOUNT_B_TOKEN: ${{ secrets.ACCOUNT_B_TOKEN }}
         run: |
-          # Add Account B as a remote named "mirror"
+          # Add Account B repository as a remote named "mirror"
           git remote add mirror https://nahid-e:$ACCOUNT_B_TOKEN@github.com/nahid-e/e-commerce.git
-          # Push all branches, tags, and commits to the target repository
+          # Attempt to push all branches, tags, and commits
           git push mirror --mirror
