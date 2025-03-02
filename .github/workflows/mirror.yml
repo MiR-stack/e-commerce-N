@@ -8,15 +8,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Check if token exists
-        run: |
-          if [ -z "$ACCOUNT_B_TOKEN" ]; then
-            echo "Token is empty"
-            exit 1
-          else
-            echo "Token is set, length: ${#ACCOUNT_B_TOKEN}"
-          fi
+      - name: Mirror Repository
         env:
           ACCOUNT_B_TOKEN: ${{ secrets.ACCOUNT_B_TOKEN }}
-          
+        run: |
+          # Replace <USERNAME> with your Account B username
+          git remote add mirror https://$ACCOUNT_B_TOKEN@github.com/nahid-e/e-commerce.git
+          git push mirror --mirror
+
   
