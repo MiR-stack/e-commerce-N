@@ -1,0 +1,38 @@
+.category_btn--ml {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  gap: 10px;
+}
+
+.category__image--avatar {
+  height: 80px;
+  width: 80px;
+  border-radius: 50%;
+
+  object-fit: cover;
+}
+
+.product-card--primary__image {
+  max-height: 220px;
+  object-fit: cover;
+}
+
+.product-quickview__image {
+  max-height: 450px;
+  object-fit: cover;
+}
+
+.modal__image {
+  max-height: 150px;
+  object-fit: cover;
+}
+.cart__image {
+  max-height: 80px;
+  object-fit: cover;
+}
+
+.pagination--active {
+  border: 1px solid var(--ltn__primary-color);
+  border-radius: 5px;
+}

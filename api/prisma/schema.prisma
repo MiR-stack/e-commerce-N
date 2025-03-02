@@ -1,0 +1,416 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Status {
+  DRAFT
+  PUBLISED
+}
+
+// category model
+model Category {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  parent_id   String?
+  description String? @db.Text
+  image_data  Json
+  status      Status  @default(DRAFT)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Self-relation for parent category
+  parent    Category?  @relation("CategoryToChildren", fields: [parent_id], references: [id], onDelete: Cascade)
+  children  Category[] @relation("CategoryToChildren")
+  products  Product[]
+  createdBy Admin?     @relation(fields: [admin_id], references: [id])
+  admin_id  String?
+
+  @@index([slug])
+  @@index([parent_id])
+}
+
+// attributes model
+model Color {
+  id       String @id @default(cuid())
+  name     String @unique
+  slug     String @unique
+  hex_code String
+  status   Status @default(DRAFT)
+
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  products   Product[]
+  createdBy  Admin?       @relation(fields: [admin_id], references: [id])
+  admin_id   String?
+  Order_item Order_item[]
+}
+
+model Sizes {
+  id     String @id @default(cuid())
+  name   String @unique
+  slug   String @unique
+  order  Int    @default(0)
+  status Status @default(DRAFT)
+
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  products   Product[]
+  createdBy  Admin?       @relation(fields: [admin_id], references: [id])
+  admin_id   String?
+  Order_item Order_item[]
+}
+
+// product image model
+model productImage {
+  id     String @id @default(cuid())
+  status Status @default(DRAFT)
+
+  // Foreign key to the related product 
+  product_id String
+  product    Product @relation(fields: [product_id], references: [id])
+
+  image_data Json
+  is_main    Boolean @default(false)
+  alt_text   String?
+  order      Int     @default(0)
+
+  // Optional: Standard timestamp fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// product model
+
+enum Stock_status {
+  IN_STOCK
+  OUT_OF_STOCK
+  COMMING_SOON
+}
+
+model Product {
+  id String @id @default(cuid())
+
+  // Basic Information
+  name        String
+  slug        String         @unique
+  sku         String         @unique
+  description String         @db.Text
+  images      productImage[]
+
+  // Pricing
+  base_price Decimal @db.Decimal(10, 2)
+  sale_price Decimal @default(0) @db.Decimal(10, 2)
+
+  // Inventory
+  stock_quantity Int          @default(0)
+  stock_status   Stock_status @default(IN_STOCK)
+
+  // Flags
+  is_featured Boolean @default(false)
+  is_special  Boolean @default(false)
+
+  // Statistics
+  views_count   Int    @default(0)
+  rating        Float?
+  reviews_count Int    @default(0)
+
+  // attributes
+  sizes  Sizes[]
+  colors Color[]
+
+  // Limits & Scheduling
+  purchase_limit Int?
+  available_from DateTime?
+
+  // SEO
+  meta_title       String?
+  meta_description String? @db.Text
+
+  // Status Management
+  status        Status    @default(DRAFT)
+  published_at  DateTime?
+  scheduled_for DateTime?
+
+  // Soft Deletes & Timestamps
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // relation
+  categories  Category[]
+  order_items Order_item[]
+  createdBy   Admin?       @relation(fields: [admin_id], references: [id])
+  admin_id    String?
+
+  @@index([slug])
+  @@index([sku])
+  @@index([is_featured])
+  @@index([is_special])
+  @@index([status])
+  @@index([stock_status])
+}
+
+// payment method
+model Payment_method {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  number      String
+  image_data  Json
+  description String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Payment   Payment[]
+}
+
+// delevery area 
+model Delevery_area {
+  id     String @id @default(cuid())
+  name   String @unique
+  slug   String @unique
+  charge Int
+  status Status @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Order     Order[]
+}
+
+// customer model
+model Customer {
+  id         String   @id @default(cuid())
+  ip         String   @unique
+  name       String
+  address    String
+  number     String
+  is_blocked Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  orders     Order[]
+
+  @@index([ip])
+  @@index([is_blocked])
+}
+
+// Order related models
+enum Order_status {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum Payment_status {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model Order {
+  id               String         @id @default(cuid())
+  customer_id      String
+  total_amount     Decimal
+  status           Order_status   @default(PENDING)
+  payment_status   Payment_status @default(PENDING)
+  shipping_address String
+  number           String
+  items            Order_item[]
+  payment          Payment?
+  coupon_code      String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  deletedAt        DateTime?
+
+  // Relations
+  customer         Customer?     @relation(fields: [customer_id], references: [id])
+  delivery_area    Delevery_area @relation(fields: [delivery_area_id], references: [id])
+  delivery_area_id String
+
+  @@index([customer_id])
+  @@index([status])
+  @@index([payment_status])
+}
+
+model Order_item {
+  id         String   @id @default(cuid())
+  order_id   String
+  product_id String
+  quantity   Int
+  price      Decimal
+  discount   Decimal  @default(0)
+  createdAt  DateTime @default(now())
+
+  // Relations
+  order   Order    @relation(fields: [order_id], references: [id])
+  product Product? @relation(fields: [product_id], references: [id])
+  color   Color?   @relation(fields: [color_id], references: [id])
+  size    Sizes?   @relation(fields: [size_id], references: [id])
+
+  color_id String?
+  size_id  String?
+}
+
+model Payment {
+  id             String         @id @default(cuid())
+  transaction_id String?
+  amount         Decimal
+  status         Payment_status @default(PENDING)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // Relations
+  order             Order          @relation(fields: [order_id], references: [id])
+  order_id          String         @unique
+  method            Payment_method @relation(fields: [payment_method_id], references: [id])
+  payment_method_id String
+
+  @@index([order_id])
+  @@index([transaction_id])
+}
+
+// email model start here
+model Email {
+  id        String   @id @default(cuid())
+  sender    String
+  recipient String
+  subject   String
+  body      String
+  source    String
+  sentAt    DateTime @default(now())
+}
+
+// authentication models
+enum Account_status {
+  PENDING
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+}
+
+model Admin {
+  id              String          @id @default(cuid())
+  name            String
+  email           String          @unique
+  password        String
+  role            Role            @relation(fields: [role_id], references: [id])
+  verified        Boolean         @default(false)
+  status          Account_status  @default(PENDING)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  Login_histories Login_history[]
+  Verifications   Verification[]
+  role_id         String
+  products        Product[]
+  categories      Category[]
+  sizes           Sizes[]
+  colors          Color[]
+  Banner          Banner[]
+}
+
+enum Login_attempt {
+  FAILED
+  SUCCESS
+}
+
+model Login_history {
+  id         String        @id @default(cuid())
+  user       Admin         @relation(fields: [admin_id], references: [id])
+  admin_id   String
+  ip_address String?
+  user_agent String?
+  attempt    Login_attempt
+  loginAt    DateTime      @default(now())
+}
+
+enum Verification_status {
+  PENDING
+  USED
+  EXPIRES
+}
+
+enum Verification_type {
+  ACCOUNT_ACTIVATION
+  PASSWORD_RESET
+  EMAIL_CHANGE
+  PHONE_CHANGE
+  TWO_FACTOR_AUTH
+  TWO_FATOR_AUTH_DISABLED
+}
+
+model Verification {
+  id         String              @id @default(cuid())
+  user       Admin               @relation(fields: [admin_id], references: [id])
+  admin_id   String
+  code       String              @unique
+  status     Verification_status @default(PENDING)
+  type       Verification_type   @default(ACCOUNT_ACTIVATION)
+  issuedAt   DateTime            @default(now())
+  expiredAt  DateTime
+  verifiedAt DateTime?
+}
+
+model Role {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String?
+  permissions Permission[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  admins Admin[]
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  type        String // e.g., 'PRODUCT', 'USER', 'ORDER'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  roles Role[]
+}
+
+model Banner {
+  id         String @id @default(cuid())
+  title      String
+  sub_title  String
+  image_data Json
+
+  createdBy Admin  @relation(fields: [adminId], references: [id])
+  adminId   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SiteSettings {
+  id           String   @id @default(cuid())
+  websiteName  String
+  description  String?
+  logo         Json?
+  socialMedia  Json
+  contactEmail String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([id])
+}

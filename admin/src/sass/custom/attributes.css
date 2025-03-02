@@ -1,0 +1,7 @@
+.size {
+  color: var(--text);
+  background: var(--background-light) !important;
+  border-radius: 9999px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem !important;
+}/*# sourceMappingURL=attributes.css.map */
